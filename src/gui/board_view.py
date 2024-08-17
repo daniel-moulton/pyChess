@@ -19,7 +19,8 @@ binary_to_image = {
     0b0110: 'black_king.png'
 }
 
-
+board_colours = ['#f1d9c0', '#a97a65']
+highlight_colour = '#5a7048'
 
 class BoardView:
     def __init__(self, master, board):
@@ -27,10 +28,11 @@ class BoardView:
         self.board = board
         self.canvas = tk.Canvas(self.master, width=800, height=800)
         self.canvas.pack()
+        self.canvas_ids = []
 
         self.piece_images = self.load_piece_images()
-        self.selected_piece = None
-        self.destination_square = None
+        self.selected_piece = None # First clicked piece/square
+        self.destination_square = None # Second clicked square
         self.draw_board()
         self.draw_pieces(board)
         self.canvas.bind("<Button-1>", self.on_click)
@@ -49,11 +51,10 @@ class BoardView:
     
     # Draw the chess board
     def draw_board(self):
-        colours = ['#f1d9c0', '#a97a65']
         size = 100
         for i in range(8):
             for j in range(8):
-                colour = colours[(i+j)%2]
+                colour = board_colours[(i+j)%2]
                 file1, rank1 = j*size, i*size
                 file2, rank2 = file1+size, rank1+size
                 self.canvas.create_rectangle(file1, rank1, file2, rank2, fill=colour, outline='')
@@ -61,8 +62,11 @@ class BoardView:
     # Draw a piece on the board
     def draw_piece(self, piece, file, rank):
         # Resize the image to the square size using PIL
-        rank = 7 - rank
-        self.canvas.create_image(file*100, rank*100, image=self.piece_images[piece.encode()], anchor='nw')
+        if piece is not None:
+            rank = 7 - rank
+            self.canvas.create_image(file*100, rank*100, image=self.piece_images[piece.encode()], anchor='nw')
+        else:
+            self.highlight_selected_square(file, rank, False)
     
     # Draw all the pieces on the board from a given board state
     def draw_pieces(self, board):
@@ -77,31 +81,110 @@ class BoardView:
 
     # Handle a click event
     def on_click(self, event):
-        file, rank = event.x//100, event.y//100
-        rank = 7 - rank
-        print(f'Clicked on square {file}, {rank}')
+        file, rank = self.get_clicked_square(event)
+
         clicked_piece = self.board.get_piece(file, rank)
-        print(clicked_piece)
+
         if self.selected_piece is None:
-            self.selected_piece = clicked_piece
-            self.highlight_square(file, rank)
-            self.redraw_square(clicked_piece, file, rank)
-            print(self.selected_piece.get_position())
+            self.handle_first_click(clicked_piece, file, rank)
         else:
-            self.destination_square = (file, rank)
-            self.board.move_piece(self.selected_piece, self.destination_square)
-            self.redraw_square(self.selected_piece, file, rank)
-            self.redraw_square(None, self.selected_piece.file, self.selected_piece.rank)
+            self.handle_second_click(file, rank)
             self.selected_piece = None
             self.destination_square = None
-    
-    def highlight_square(self, file, rank):
+
+    # Return the file and rank of the clicked square
+    def get_clicked_square(self, event):
+        file = event.x // 100
+        rank = 7 - (event.y // 100)
+        return file, rank
+
+    # First click must select a piece
+    def handle_first_click(self, clicked_piece, file, rank):
+        if clicked_piece is not None and clicked_piece.color == self.board.active_color:
+            self.selected_piece = clicked_piece
+            self.highlight_selected_square(file, rank)
+            self.redraw_square(clicked_piece, file, rank)
+            moves = clicked_piece.generate_moves(self.board)
+            for move in moves:
+                self.highlight_possible_square(move, self.board.get_piece(*move) is not None)
+
+    def handle_second_click(self, file, rank):
+        # Deselect if choosing an illegal square to move to
+        if (file, rank) not in self.selected_piece.moves:
+            self.deselect_piece()
+            return
+        
+        self.move_selected_piece(file, rank)
+
+    # Return True if the same square is clicked twice
+    def is_same_square(self, file, rank):
+        return self.selected_piece.get_position() == (file, rank)
+
+    # Unhighlights and deselects the selected piece
+    def deselect_piece(self):
+        self.highlight_selected_square(self.selected_piece.file, self.selected_piece.rank, False)
+        self.reset_possible_moves()
+        self.redraw_square(self.selected_piece, self.selected_piece.file, self.selected_piece.rank)
+        self.selected_piece = None
+        self.destination_square = None
+
+    def move_selected_piece(self, file, rank):
+        self.destination_square = (file, rank)
+        self.update_board_view(file, rank)
+        self.board.move_piece(self.selected_piece, self.destination_square)
+
+    # Update the board view after moving a piece
+    def update_board_view(self, file, rank):
+        # Unhighlight the original square
+        self.highlight_selected_square(self.selected_piece.file, self.selected_piece.rank, False)
+
+        # Empty the original square
+        self.redraw_square(None, self.selected_piece.file, self.selected_piece.rank)
+
+        # Empty the possible move squares
+        self.reset_possible_moves()
+
+        # Empty and redraw the destination square
+        self.redraw_square(None, file, rank)
+        self.redraw_square(self.selected_piece, file, rank)
+
+    def reset_possible_moves(self):
+        for ids in self.canvas_ids:
+            self.canvas.delete(ids)
+
+    def highlight_selected_square(self, file, rank, highlight=True):
         size = 100
         rank = 7 - rank
         file1, rank1 = file*size, rank*size
         file2, rank2 = file1+size, rank1+size
-        # Set background to red without removing the piece
-        self.canvas.create_rectangle(file1, rank1, file2, rank2, fill='red', outline='')
+        colour = highlight_colour if highlight else board_colours[(file+rank)%2]
+        self.canvas.create_rectangle(file1, rank1, file2, rank2, fill=colour, outline='')
 
     def redraw_square(self, piece, file, rank):
         self.draw_piece(piece, file, rank)
+    
+    def highlight_possible_square(self, move, capture=False):
+        file, rank = move
+        # Highlight a small circle in the center of the square
+        size = 100
+        rank = 7 - rank
+        file1, rank1 = file*size, rank*size
+        file2, rank2 = file1+size, rank1+size
+        if capture:
+            # Draw a right angle triangle in each corner of the square
+            ids = self.draw_highlight_triangles(file1, rank1, file2, rank2)
+            for id in ids:
+                self.canvas_ids.append(id)
+        else:
+            circle_offset = 63
+            ids = self.canvas.create_oval(file1+circle_offset, rank1+circle_offset, file2-circle_offset, rank2-circle_offset, fill=highlight_colour, outline='')
+            self.canvas_ids.append(ids)
+
+    def draw_highlight_triangles(self, file1, rank1, file2, rank2):
+        ids = []
+        trainagle_size = 16
+        ids.append(self.canvas.create_polygon(file1, rank1, file1+trainagle_size, rank1, file1, rank1+trainagle_size, fill=highlight_colour, outline=''))
+        ids.append(self.canvas.create_polygon(file2, rank1, file2-trainagle_size, rank1, file2, rank1+trainagle_size, fill=highlight_colour, outline=''))
+        ids.append(self.canvas.create_polygon(file1, rank2, file1+trainagle_size, rank2, file1, rank2-trainagle_size, fill=highlight_colour, outline=''))
+        ids.append(self.canvas.create_polygon(file2, rank2, file2-trainagle_size, rank2, file2, rank2-trainagle_size, fill=highlight_colour, outline=''))
+        return ids

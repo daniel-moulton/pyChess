@@ -1,4 +1,4 @@
-from src.game.piece import Color, PieceType, Piece, fen_to_class
+from src.game.piece import Color, Piece, fen_to_class
 
 class Board:
     def __init__(self, fen='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'):
@@ -12,7 +12,13 @@ class Board:
         self.parse_fen(fen)
     
     def __str__(self):
-        return '\n'.join([' '.join([str(piece) if piece is not None else 'None' for piece in row]) for row in self.board])
+        board_str = ''
+        for rank in range(7, -1, -1):
+            for file in range(8):
+                piece = self.get_piece(file, rank)
+                board_str += str(piece).ljust(12)
+            board_str += '\n'
+        return board_str
     
     def get_piece(self, file, rank):
         return self.board[rank][file]
@@ -58,4 +64,6 @@ class Board:
         self.set_piece(file, rank, piece)
         self.set_piece(piece.file, piece.rank, None)
         piece.set_position(file, rank)
+        self.halfmove_clock += 1
+        self.active_color = Color.WHITE if self.active_color == Color.BLACK else Color.BLACK
     
