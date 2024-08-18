@@ -1,4 +1,4 @@
-from src.game.piece import Color, Piece, fen_to_class
+from src.game.piece import Color, Piece, PieceType, fen_to_class
 
 class Board:
     def __init__(self, fen='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'):
@@ -64,6 +64,17 @@ class Board:
         self.set_piece(file, rank, piece)
         self.set_piece(piece.file, piece.rank, None)
         piece.set_position(file, rank)
+        if piece.piece_type == PieceType.PAWN:
+            self.halfmove_clock = 0
+            # Check for promotion
+            if rank == 0 or rank == 7:
+                char = 'Q' if piece.color == Color.WHITE else 'q'
+                piece = self.create_piece(char, file, rank)
+                self.set_piece(file, rank, piece)
+        
+
+
         self.halfmove_clock += 1
         self.active_color = Color.WHITE if self.active_color == Color.BLACK else Color.BLACK
+
     

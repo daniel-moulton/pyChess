@@ -132,6 +132,7 @@ class BoardView:
         self.destination_square = (file, rank)
         self.update_board_view(file, rank)
         self.board.move_piece(self.selected_piece, self.destination_square)
+        self.update_board_view(file, rank)
 
     # Update the board view after moving a piece
     def update_board_view(self, file, rank):

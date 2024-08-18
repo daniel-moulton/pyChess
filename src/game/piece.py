@@ -59,7 +59,7 @@ class Pawn(Piece):
             if (rank == 1 or rank == 6) and board.get_piece(file, rank + 2 * direction) is None:
                 moves.append((file, rank + 2 * direction))
         for attack in [-1, 1]:
-            target = board.get_piece(file + attack, rank + direction)
+            target = board.get_piece(file + attack, rank + direction) if 0 <= file + attack < 8 else None
             if target is not None and target.color != self.color:
                 moves.append((file + attack, rank + direction))
         self.moves = moves
