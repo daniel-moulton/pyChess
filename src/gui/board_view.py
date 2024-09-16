@@ -1,6 +1,7 @@
 import tkinter as tk
 import os
 from PIL import Image, ImageTk
+from src.game.piece import Color
 
 # Map the binary representation of the pieces to their image names
 binary_to_image = {
@@ -21,6 +22,7 @@ binary_to_image = {
 
 board_colours = ['#f1d9c0', '#a97a65']
 highlight_colour = '#5a7048'
+check_colour = '#ff0000'
 
 class BoardView:
     def __init__(self, master, board):
@@ -66,7 +68,7 @@ class BoardView:
             rank = 7 - rank
             self.canvas.create_image(file*100, rank*100, image=self.piece_images[piece.encode()], anchor='nw')
         else:
-            self.highlight_selected_square(file, rank, False)
+            self.highlight_selected_square(file, rank, highlight=False)
     
     # Draw all the pieces on the board from a given board state
     def draw_pieces(self, board):
@@ -81,6 +83,9 @@ class BoardView:
 
     # Handle a click event
     def on_click(self, event):
+        if not self.board.game_active:
+            return
+
         file, rank = self.get_clicked_square(event)
 
         clicked_piece = self.board.get_piece(file, rank)
@@ -122,7 +127,11 @@ class BoardView:
 
     # Unhighlights and deselects the selected piece
     def deselect_piece(self):
-        self.highlight_selected_square(self.selected_piece.file, self.selected_piece.rank, False)
+        # Check if the king was in check (need to rehighlight the square)
+        king = self.board.black_king if self.selected_piece.color == Color.BLACK else self.board.black_king
+        king_in_check = self.is_king_in_check(king) and self.selected_piece == king
+
+        self.highlight_selected_square(self.selected_piece.file, self.selected_piece.rank, highlight=False, check=king_in_check)
         self.reset_possible_moves()
         self.redraw_square(self.selected_piece, self.selected_piece.file, self.selected_piece.rank)
         self.selected_piece = None
@@ -133,6 +142,7 @@ class BoardView:
         self.update_board_view(file, rank)
         self.board.move_piece(self.selected_piece, self.destination_square)
         self.update_board_view(file, rank)
+        self.board.update_game_state()
 
     # Update the board view after moving a piece
     def update_board_view(self, file, rank):
@@ -149,16 +159,31 @@ class BoardView:
         self.redraw_square(None, file, rank)
         self.redraw_square(self.selected_piece, file, rank)
 
+        opp_king = self.board.white_king if self.selected_piece.color == Color.BLACK else self.board.black_king
+
+        if self.is_king_in_check(opp_king):
+            # Check if move has put the opposite king in check
+            self.highlight_king_if_in_check()
+
+            # Check for checkmate
+            if self.is_king_in_checkmate():
+                print("Checkmate")
+                self.board.game_active = False
+
+
     def reset_possible_moves(self):
         for ids in self.canvas_ids:
             self.canvas.delete(ids)
 
-    def highlight_selected_square(self, file, rank, highlight=True):
+    def highlight_selected_square(self, file, rank, highlight=True, check=False):
         size = 100
         rank = 7 - rank
         file1, rank1 = file*size, rank*size
         file2, rank2 = file1+size, rank1+size
-        colour = highlight_colour if highlight else board_colours[(file+rank)%2]
+        if check:
+            colour = check_colour
+        else:
+            colour = highlight_colour if highlight else board_colours[(file+rank)%2]
         self.canvas.create_rectangle(file1, rank1, file2, rank2, fill=colour, outline='')
 
     def redraw_square(self, piece, file, rank):
@@ -166,13 +191,11 @@ class BoardView:
     
     def highlight_possible_square(self, move, capture=False):
         file, rank = move
-        # Highlight a small circle in the center of the square
         size = 100
         rank = 7 - rank
         file1, rank1 = file*size, rank*size
         file2, rank2 = file1+size, rank1+size
         if capture:
-            # Draw a right angle triangle in each corner of the square
             ids = self.draw_highlight_triangles(file1, rank1, file2, rank2)
             for id in ids:
                 self.canvas_ids.append(id)
@@ -181,6 +204,7 @@ class BoardView:
             ids = self.canvas.create_oval(file1+circle_offset, rank1+circle_offset, file2-circle_offset, rank2-circle_offset, fill=highlight_colour, outline='')
             self.canvas_ids.append(ids)
 
+    # Highlights the four corners of a square, indicates piece can be captured
     def draw_highlight_triangles(self, file1, rank1, file2, rank2):
         ids = []
         trainagle_size = 16
@@ -189,3 +213,26 @@ class BoardView:
         ids.append(self.canvas.create_polygon(file1, rank2, file1+trainagle_size, rank2, file1, rank2-trainagle_size, fill=highlight_colour, outline=''))
         ids.append(self.canvas.create_polygon(file2, rank2, file2-trainagle_size, rank2, file2, rank2-trainagle_size, fill=highlight_colour, outline=''))
         return ids
+    
+    def is_king_in_check(self, king):
+        return king.in_check(self.board)
+
+    def highlight_king_if_in_check(self):
+        king = self.board.white_king if self.selected_piece.color == Color.BLACK else self.board.black_king
+        
+        # Remove any highlight on the king's square
+        self.highlight_selected_square(king.file, king.rank, highlight=False)
+
+        if self.is_king_in_check(king):
+            # Highlight the king if in check
+            self.highlight_selected_square(king.file, king.rank, check=True)
+
+        self.redraw_square(king, king.file, king.rank)
+    
+    def is_king_in_checkmate(self):
+        king = self.board.white_king if self.selected_piece.color == Color.BLACK else self.board.black_king
+
+        if not self.is_king_in_check(king):
+            return False
+        
+        return self.board.is_king_in_checkmate(king)

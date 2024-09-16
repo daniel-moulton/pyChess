@@ -8,6 +8,9 @@ class Board:
         self.en_passant_square = None
         self.halfmove_clock = None
         self.fullmove_number = None
+        self.white_king = None
+        self.black_king = None
+        self.game_active = True
 
         self.parse_fen(fen)
     
@@ -37,6 +40,16 @@ class Board:
         self.en_passant_square = parts[3]
         self.halfmove_clock = int(parts[4])
         self.fullmove_number = int(parts[5])
+        self.white_king = self.find_king(Color.WHITE)
+        self.black_king = self.find_king(Color.BLACK)
+    
+    def find_king(self, color):
+        for rank in range(8):
+            for file in range(8):
+                piece = self.get_piece(file, rank)
+                if piece is not None and piece.color == color and piece.piece_type == PieceType.KING:
+                    return piece
+        return None
 
     def load_fen(self, fen):
         file, rank = 0, 7
@@ -61,20 +74,44 @@ class Board:
     
     def move_piece(self, piece, destination):
         file, rank = destination
+
+        # Check if the move is a capture
+        captured_piece = self.get_piece(file, rank)
+
+        # Move the piece to the new position
         self.set_piece(file, rank, piece)
+
+        # Remove the piece from its previous position
         self.set_piece(piece.file, piece.rank, None)
         piece.set_position(file, rank)
-        if piece.piece_type == PieceType.PAWN:
-            self.halfmove_clock = 0
-            # Check for promotion
-            if rank == 0 or rank == 7:
-                char = 'Q' if piece.color == Color.WHITE else 'q'
-                piece = self.create_piece(char, file, rank)
-                self.set_piece(file, rank, piece)
         
-
-
-        self.halfmove_clock += 1
-        self.active_color = Color.WHITE if self.active_color == Color.BLACK else Color.BLACK
-
+        return captured_piece
     
+    def undo_move(self, piece, original_position, captured_piece):
+        original_file, original_rank = original_position
+        current_file, current_rank = piece.get_position()
+
+        # Move the piece back to its original position
+        self.set_piece(original_file, original_rank, piece)
+        piece.set_position(original_file, original_rank)
+
+        # Restore the captured piece
+        self.set_piece(current_file, current_rank, captured_piece)
+        
+    def update_game_state(self):
+        self.active_color = Color.WHITE if self.active_color == Color.BLACK else Color.BLACK
+        if self.active_color == Color.WHITE:
+            self.fullmove_number += 1
+        self.halfmove_clock += 1
+    
+    def is_king_in_checkmate(self, king):
+        color = king.color
+        # Loop through board, if piece is same color as king, check if it can move
+        for rank in range(8):
+            for file in range(8):
+                piece = self.get_piece(file, rank)
+                if piece is not None and piece.color == color:
+                    moves = piece.generate_moves(self)
+                    if moves:
+                        return False
+        return True
