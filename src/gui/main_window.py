@@ -1,6 +1,7 @@
 import tkinter as tk
 from src.gui.board_view import BoardView
 
+
 class MainWindow:
     def __init__(self, board):
         self.window = tk.Tk()

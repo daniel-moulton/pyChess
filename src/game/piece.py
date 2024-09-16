@@ -6,11 +6,12 @@
 # The following 4 bits represent the type of the piece (0 for none, 1 for pawn, 2 for knight, 3 for bishop, 4 for rook, 5 for queen, 6 for king)
 
 from enum import Enum
-from copy import deepcopy
+
 
 class Color(Enum):
     WHITE = 0b1000
     BLACK = 0b0000
+
 
 class PieceType(Enum):
     NONE = 0b0000
@@ -29,26 +30,25 @@ class Piece:
         self.rank = None
         self.file = None
         self.moves = []
-    
+
     def encode(self):
         return self.color.value | self.piece_type.value
-    
+
     def generate_moves(self, board, file, rank):
         raise NotImplementedError
-    
+
     def get_position(self):
         return self.file, self.rank
-    
+
     def set_position(self, file, rank):
         self.file = file
         self.rank = rank
-    
+
     # Filter out moves that would put the friendly king in check
     def filter_self_check_moves(self, board, moves):
         filtered_moves = []
         for move in moves:
-            original_position= self.get_position()
-            piece = board.get_piece(*original_position)
+            original_position = self.get_position()
             captured_piece = board.move_piece(self, move)
 
             king = board.white_king if self.color == Color.WHITE else board.black_king
@@ -56,32 +56,30 @@ class Piece:
                 filtered_moves.append(move)
             board.undo_move(self, original_position, captured_piece)
         return filtered_moves
-    
+
     def filter_in_check_moves(self, board, moves):
         king = board.white_king if self.color == Color.WHITE else board.black_king
 
         if not king.in_check(board):
             return moves
-        
+
         filtered_moves = []
         for move in moves:
             original_position = self.get_position()
-            piece = board.get_piece(*original_position)
             captured_piece = board.move_piece(self, move)
             if not king.in_check(board):
                 filtered_moves.append(move)
             board.undo_move(self, original_position, captured_piece)
         return filtered_moves
 
-
     def __str__(self):
         return f'{self.color.name} {self.piece_type.name}'
-    
+
 
 class Pawn(Piece):
     def __init__(self, color):
         super().__init__(color, PieceType.PAWN)
-    
+
     def generate_moves(self, board):
         moves = []
         file, rank = self.get_position()
@@ -105,7 +103,7 @@ class Pawn(Piece):
 class Knight(Piece):
     def __init__(self, color):
         super().__init__(color, PieceType.KNIGHT)
-    
+
     def generate_moves(self, board):
         moves = []
         file, rank = self.get_position()
@@ -117,14 +115,15 @@ class Knight(Piece):
 
         moves = self.filter_self_check_moves(board, moves)
         moves = self.filter_in_check_moves(board, moves)
-                    
+
         self.moves = moves
         return moves
+
 
 class Bishop(Piece):
     def __init__(self, color):
         super().__init__(color, PieceType.BISHOP)
-    
+
     def generate_moves(self, board):
         moves = []
         file, rank = self.get_position()
@@ -148,10 +147,11 @@ class Bishop(Piece):
         self.moves = moves
         return moves
 
+
 class Rook(Piece):
     def __init__(self, color):
         super().__init__(color, PieceType.ROOK)
-    
+
     def generate_moves(self, board):
         moves = []
         file, rank = self.get_position()
@@ -175,10 +175,11 @@ class Rook(Piece):
         self.moves = moves
         return moves
 
+
 class Queen(Piece):
     def __init__(self, color):
         super().__init__(color, PieceType.QUEEN)
-    
+
     def generate_moves(self, board):
         # Combine the moves of a rook and a bishop
         rook_moves = Rook.generate_moves(self, board)
@@ -188,10 +189,11 @@ class Queen(Piece):
         self.moves = moves
         return self.moves
 
+
 class King(Piece):
     def __init__(self, color):
         super().__init__(color, PieceType.KING)
-    
+
     def generate_moves(self, board):
         moves = []
         file, rank = self.get_position()
@@ -210,7 +212,7 @@ class King(Piece):
 
         self.moves = moves
         return moves
-    
+
     def in_check(self, board):
         # Check if the king is in check
         # Check all squares a bishop, rook, knight, or pawn could attack
@@ -246,7 +248,7 @@ class King(Piece):
                 target = board.get_piece(file + dx, rank + dy)
                 if target is not None and target.color != self.color and target.piece_type == PieceType.KNIGHT:
                     return True
-                
+
         # Check for pawns
         direction = 1 if self.color == Color.WHITE else -1
         for attack in [-1, 1]:
@@ -255,7 +257,7 @@ class King(Piece):
                 return True
 
         return False
-    
+
 
 # Map FEN characters directly to the piece classes
 fen_to_class = {

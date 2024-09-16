@@ -5,7 +5,7 @@ from src.game.piece import Color
 
 # Map the binary representation of the pieces to their image names
 binary_to_image = {
-    0b0001: None,
+    0b0000: None,
     0b1001: 'white_pawn.png',
     0b1010: 'white_knight.png',
     0b1011: 'white_bishop.png',
@@ -24,6 +24,7 @@ board_colours = ['#f1d9c0', '#a97a65']
 highlight_colour = '#5a7048'
 check_colour = '#ff0000'
 
+
 class BoardView:
     def __init__(self, master, board):
         self.master = master
@@ -33,12 +34,12 @@ class BoardView:
         self.canvas_ids = []
 
         self.piece_images = self.load_piece_images()
-        self.selected_piece = None # First clicked piece/square
-        self.destination_square = None # Second clicked square
+        self.selected_piece = None  # First clicked piece/square
+        self.destination_square = None  # Second clicked square
         self.draw_board()
         self.draw_pieces(board)
         self.canvas.bind("<Button-1>", self.on_click)
-    
+
     # Load piece images from the images directory
     def load_piece_images(self):
         images = {}
@@ -50,13 +51,13 @@ class BoardView:
                 image = image.resize((100, 100))
                 images[piece] = ImageTk.PhotoImage(image)
         return images
-    
+
     # Draw the chess board
     def draw_board(self):
         size = 100
         for i in range(8):
             for j in range(8):
-                colour = board_colours[(i+j)%2]
+                colour = board_colours[(i+j) % 2]
                 file1, rank1 = j*size, i*size
                 file2, rank2 = file1+size, rank1+size
                 self.canvas.create_rectangle(file1, rank1, file2, rank2, fill=colour, outline='')
@@ -69,7 +70,7 @@ class BoardView:
             self.canvas.create_image(file*100, rank*100, image=self.piece_images[piece.encode()], anchor='nw')
         else:
             self.highlight_selected_square(file, rank, highlight=False)
-    
+
     # Draw all the pieces on the board from a given board state
     def draw_pieces(self, board):
         # Iterate over the board and draw the pieces
@@ -79,7 +80,6 @@ class BoardView:
                 piece = board.get_piece(file, rank)
                 if piece is not None:
                     self.draw_piece(piece, file, rank)
-
 
     # Handle a click event
     def on_click(self, event):
@@ -118,7 +118,7 @@ class BoardView:
         if (file, rank) not in self.selected_piece.moves:
             self.deselect_piece()
             return
-        
+
         self.move_selected_piece(file, rank)
 
     # Return True if the same square is clicked twice
@@ -170,7 +170,6 @@ class BoardView:
                 print("Checkmate")
                 self.board.game_active = False
 
-
     def reset_possible_moves(self):
         for ids in self.canvas_ids:
             self.canvas.delete(ids)
@@ -183,12 +182,12 @@ class BoardView:
         if check:
             colour = check_colour
         else:
-            colour = highlight_colour if highlight else board_colours[(file+rank)%2]
+            colour = highlight_colour if highlight else board_colours[(file+rank) % 2]
         self.canvas.create_rectangle(file1, rank1, file2, rank2, fill=colour, outline='')
 
     def redraw_square(self, piece, file, rank):
         self.draw_piece(piece, file, rank)
-    
+
     def highlight_possible_square(self, move, capture=False):
         file, rank = move
         size = 100
@@ -201,25 +200,30 @@ class BoardView:
                 self.canvas_ids.append(id)
         else:
             circle_offset = 63
-            ids = self.canvas.create_oval(file1+circle_offset, rank1+circle_offset, file2-circle_offset, rank2-circle_offset, fill=highlight_colour, outline='')
+            ids = self.canvas.create_oval(
+                file1+circle_offset, rank1+circle_offset, file2-circle_offset, rank2-circle_offset, fill=highlight_colour, outline='')
             self.canvas_ids.append(ids)
 
     # Highlights the four corners of a square, indicates piece can be captured
     def draw_highlight_triangles(self, file1, rank1, file2, rank2):
         ids = []
         trainagle_size = 16
-        ids.append(self.canvas.create_polygon(file1, rank1, file1+trainagle_size, rank1, file1, rank1+trainagle_size, fill=highlight_colour, outline=''))
-        ids.append(self.canvas.create_polygon(file2, rank1, file2-trainagle_size, rank1, file2, rank1+trainagle_size, fill=highlight_colour, outline=''))
-        ids.append(self.canvas.create_polygon(file1, rank2, file1+trainagle_size, rank2, file1, rank2-trainagle_size, fill=highlight_colour, outline=''))
-        ids.append(self.canvas.create_polygon(file2, rank2, file2-trainagle_size, rank2, file2, rank2-trainagle_size, fill=highlight_colour, outline=''))
+        ids.append(self.canvas.create_polygon(
+            file1, rank1, file1+trainagle_size, rank1, file1, rank1+trainagle_size, fill=highlight_colour, outline=''))
+        ids.append(self.canvas.create_polygon(
+            file2, rank1, file2-trainagle_size, rank1, file2, rank1+trainagle_size, fill=highlight_colour, outline=''))
+        ids.append(self.canvas.create_polygon(
+            file1, rank2, file1+trainagle_size, rank2, file1, rank2-trainagle_size, fill=highlight_colour, outline=''))
+        ids.append(self.canvas.create_polygon(
+            file2, rank2, file2-trainagle_size, rank2, file2, rank2-trainagle_size, fill=highlight_colour, outline=''))
         return ids
-    
+
     def is_king_in_check(self, king):
         return king.in_check(self.board)
 
     def highlight_king_if_in_check(self):
         king = self.board.white_king if self.selected_piece.color == Color.BLACK else self.board.black_king
-        
+
         # Remove any highlight on the king's square
         self.highlight_selected_square(king.file, king.rank, highlight=False)
 
@@ -228,11 +232,11 @@ class BoardView:
             self.highlight_selected_square(king.file, king.rank, check=True)
 
         self.redraw_square(king, king.file, king.rank)
-    
+
     def is_king_in_checkmate(self):
         king = self.board.white_king if self.selected_piece.color == Color.BLACK else self.board.black_king
 
         if not self.is_king_in_check(king):
             return False
-        
+
         return self.board.is_king_in_checkmate(king)
