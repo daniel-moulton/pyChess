@@ -1,7 +1,9 @@
-import tkinter as tk
 import os
 from PIL import Image, ImageTk
-from src.game.piece import Color
+from src.game.piece import Piece
+from src.game.colour import Colour
+from src.game.board import Board
+
 
 # Map the binary representation of the pieces to their image names
 binary_to_image = {
@@ -26,10 +28,9 @@ check_colour = '#ff0000'
 
 
 class BoardView:
-    def __init__(self, master, board):
-        self.master = master
+    def __init__(self, canvas, board: Board) -> None:
         self.board = board
-        self.canvas = tk.Canvas(self.master, width=800, height=800)
+        self.canvas = canvas
         self.canvas.pack()
         self.canvas_ids = []
 
@@ -40,8 +41,13 @@ class BoardView:
         self.draw_pieces(board)
         self.canvas.bind("<Button-1>", self.on_click)
 
-    # Load piece images from the images directory
     def load_piece_images(self):
+        """
+        Loads and returns a dictionary of piece images.
+
+        Returns:
+            dict: A dictionary mapping piece names to their corresponding image objects.
+        """
         images = {}
         pieces_path = 'src/gui/images'
         for piece, image_name in binary_to_image.items():
@@ -63,7 +69,7 @@ class BoardView:
                 self.canvas.create_rectangle(file1, rank1, file2, rank2, fill=colour, outline='')
 
     # Draw a piece on the board
-    def draw_piece(self, piece, file, rank):
+    def draw_piece(self, piece: Piece, file: int, rank: int) -> None:
         # Resize the image to the square size using PIL
         if piece is not None:
             rank = 7 - rank
@@ -105,7 +111,7 @@ class BoardView:
 
     # First click must select a piece
     def handle_first_click(self, clicked_piece, file, rank):
-        if clicked_piece is not None and clicked_piece.color == self.board.active_color:
+        if clicked_piece is not None and clicked_piece.colour == self.board.active_colour:
             self.selected_piece = clicked_piece
             self.highlight_selected_square(file, rank)
             self.redraw_square(clicked_piece, file, rank)
@@ -128,7 +134,7 @@ class BoardView:
     # Unhighlights and deselects the selected piece
     def deselect_piece(self):
         # Check if the king was in check (need to rehighlight the square)
-        king = self.board.black_king if self.selected_piece.color == Color.BLACK else self.board.black_king
+        king = self.board.black_king if self.selected_piece.colour == Colour.BLACK else self.board.black_king
         king_in_check = self.is_king_in_check(king) and self.selected_piece == king
 
         self.highlight_selected_square(self.selected_piece.file, self.selected_piece.rank, highlight=False, check=king_in_check)
@@ -159,7 +165,7 @@ class BoardView:
         self.redraw_square(None, file, rank)
         self.redraw_square(self.selected_piece, file, rank)
 
-        opp_king = self.board.white_king if self.selected_piece.color == Color.BLACK else self.board.black_king
+        opp_king = self.board.white_king if self.selected_piece.colour == Colour.BLACK else self.board.black_king
 
         if self.is_king_in_check(opp_king):
             # Check if move has put the opposite king in check
@@ -222,7 +228,7 @@ class BoardView:
         return king.in_check(self.board)
 
     def highlight_king_if_in_check(self):
-        king = self.board.white_king if self.selected_piece.color == Color.BLACK else self.board.black_king
+        king = self.board.white_king if self.selected_piece.colour == Colour.BLACK else self.board.black_king
 
         # Remove any highlight on the king's square
         self.highlight_selected_square(king.file, king.rank, highlight=False)
@@ -234,7 +240,7 @@ class BoardView:
         self.redraw_square(king, king.file, king.rank)
 
     def is_king_in_checkmate(self):
-        king = self.board.white_king if self.selected_piece.color == Color.BLACK else self.board.black_king
+        king = self.board.white_king if self.selected_piece.colour == Colour.BLACK else self.board.black_king
 
         if not self.is_king_in_check(king):
             return False
