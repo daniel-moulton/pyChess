@@ -1,10 +1,23 @@
-from src.game.piece import Color, PieceType, fen_to_class
+from src.game.piece import fen_to_class, Piece, King
+from src.game.colour import Colour
+from src.game.piece_type import PieceType
 
 
 class Board:
-    def __init__(self, fen='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'):
+    def __init__(self, fen: str = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') -> None:
+        """
+        Initializes the board object.
+
+        Args:
+            fen (str): The position of the board in Forsyth-Edwards Notation (FEN).
+                The default value is the starting position of a chess game.
+
+        Returns:
+            None
+        """
         self.board = [[None for _ in range(8)] for _ in range(8)]
-        self.active_color = None
+        self.fen = fen
+        self.active_colour = None
         self.castling_rights = None
         self.en_passant_square = None
         self.halfmove_clock = None
@@ -15,7 +28,16 @@ class Board:
 
         self.parse_fen(fen)
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        Returns a string representation of the board.
+
+        The string representation consists of the pieces on the board arranged in a grid format.
+        Each piece is represented by its string representation, padded with spaces to ensure consistent spacing.
+
+        Returns:
+            str: The string representation of the board.
+        """
         board_str = ''
         for rank in range(7, -1, -1):
             for file in range(8):
@@ -24,35 +46,93 @@ class Board:
             board_str += '\n'
         return board_str
 
-    def get_piece(self, file, rank):
+    def get_piece(self, file: int, rank: int) -> Piece:
+        """
+        Retrieves the piece located at the specified file and rank on the board.
+
+        Args:
+            file (int): The file (column) index of the piece.
+            rank (int): The rank (row) index of the piece.
+
+        Returns:
+            Piece: The piece located at the specified file and rank.
+
+        """
         return self.board[rank][file]
 
-    def set_piece(self, file, rank, piece):
+    def set_piece(self, file: int, rank: int, piece: Piece) -> None:
+        """
+        Sets the piece at the specified file and rank on the board.
+
+        Args:
+            file (int): The file (column) index of the piece.
+            rank (int): The rank (row) index of the piece.
+            piece (Piece): The piece to set at the specified file and rank.
+
+        Returns:
+            None
+        """
         self.board[rank][file] = piece
 
-    def get_board(self):
+    def get_board(self) -> list[list[Piece]]:
+        """
+        Returns the board as a 2D list of pieces.
+
+        Returns:
+            list[list[Piece]]: The board represented as a 2D list of pieces.
+        """
         return self.board
 
-    def parse_fen(self, fen):
+    def parse_fen(self, fen: str) -> None:
+        """
+        Parses the FEN string and updates the board state accordingly.
+
+        Loads the piece positions, active colour, castling rights,
+        en passant square, halfmove clock, and fullmove number.
+
+        Args:
+            fen (str): The FEN string representing the board state.
+
+        Returns:
+            None
+        """
         parts = fen.split()
         self.load_fen(parts[0])
-        self.active_color = Color.WHITE if parts[1] == 'w' else Color.BLACK
+        self.active_colour = Colour.WHITE if parts[1] == 'w' else Colour.BLACK
         self.castling_rights = parts[2]
         self.en_passant_square = parts[3]
         self.halfmove_clock = int(parts[4])
         self.fullmove_number = int(parts[5])
-        self.white_king = self.find_king(Color.WHITE)
-        self.black_king = self.find_king(Color.BLACK)
+        self.white_king = self.find_king(Colour.WHITE)
+        self.black_king = self.find_king(Colour.BLACK)
 
-    def find_king(self, color):
+    def find_king(self, colour: Colour) -> Piece:
+        """
+        Finds the king of the specified colour on the board.
+
+        Args:
+            colour (Colour): The colour of the king to find.
+
+        Returns:
+            Piece: The king piece of the specified colour.
+        """
         for rank in range(8):
             for file in range(8):
                 piece = self.get_piece(file, rank)
-                if piece is not None and piece.color == color and piece.piece_type == PieceType.KING:
+                if piece is not None and piece.colour == colour and piece.piece_type == PieceType.KING:
                     return piece
         return None
 
-    def load_fen(self, fen):
+    def load_fen(self, fen: str) -> None:
+        """
+        Loads the piece positions from the FEN string.
+
+        Args:
+            fen (str): The FEN string representing the piece positions.
+
+        Returns:
+            None
+        """
         file, rank = 0, 7
         for char in fen:
             if char == '/':
@@ -65,15 +145,35 @@ class Board:
                 self.set_piece(file, rank, piece)
                 file += 1
 
-    # Creates a piece object and sets its position
-    def create_piece(self, char, file, rank):
-        color = Color.WHITE if char.isupper() else Color.BLACK
+    def create_piece(self, char: str, file: int, rank: int) -> Piece:
+        """
+        Creates a piece object based on the FEN character representation.
+
+        Args:
+            char (str): The FEN character representing the piece.
+            file (int): The file (column) index of the piece.
+            rank (int): The rank (row) index of the piece.
+
+        Returns:
+            Piece: The piece object created based on the FEN character representation.
+        """
+        colour = Colour.WHITE if char.isupper() else Colour.BLACK
         piece_class = fen_to_class[char.lower()]
-        piece = piece_class(color)
+        piece = piece_class(colour)
         piece.set_position(file, rank)
         return piece
 
-    def move_piece(self, piece, destination):
+    def move_piece(self, piece: Piece, destination: tuple[int, int]) -> Piece:
+        """
+        Moves a piece to the specified destination on the board.
+
+        Args:
+            piece (Piece): The piece to move.
+            destination (tuple[int, int]): The destination file and rank to move the piece to.
+
+        Returns:
+            Piece: The piece that was captured during the move, if any.
+        """
         file, rank = destination
 
         # Check if the move is a capture
@@ -88,7 +188,19 @@ class Board:
 
         return captured_piece
 
-    def undo_move(self, piece, original_position, captured_piece):
+    def undo_move(self, piece: Piece, original_position: tuple[int, int],
+                  captured_piece: Piece) -> None:
+        """
+        Undoes a move by moving the piece back to its original position and restoring the captured piece.
+
+        Args:
+            piece (Piece): The piece to move back to its original position.
+            original_position (tuple[int, int]): The original file and rank of the piece.
+            captured_piece (Piece): The captured piece to restore (if any).
+
+        Returns:
+            None
+        """
         original_file, original_rank = original_position
         current_file, current_rank = piece.get_position()
 
@@ -100,18 +212,35 @@ class Board:
         self.set_piece(current_file, current_rank, captured_piece)
 
     def update_game_state(self):
-        self.active_color = Color.WHITE if self.active_color == Color.BLACK else Color.BLACK
-        if self.active_color == Color.WHITE:
+        """
+        Updates the game state based on the current board position.
+
+        Switches the active colour and increments the fullmove number.
+
+        Returns:
+            None
+        """
+        self.active_colour = Colour.WHITE if self.active_colour == Colour.BLACK else Colour.BLACK
+        if self.active_colour == Colour.WHITE:
             self.fullmove_number += 1
         self.halfmove_clock += 1
 
-    def is_king_in_checkmate(self, king):
-        color = king.color
-        # Loop through board, if piece is same color as king, check if it can move
+    def is_king_in_checkmate(self, king: King) -> bool:
+        """
+        Checks if the specified king is in checkmate.
+
+        Args:
+            king (King): The king to check for checkmate.
+
+        Returns:
+            bool: True if the king is in checkmate, False otherwise.
+        """
+        colour = king.colour
+        # Loop through board, if piece is same colour as king, check if it can move
         for rank in range(8):
             for file in range(8):
                 piece = self.get_piece(file, rank)
-                if piece is not None and piece.color == color:
+                if piece is not None and piece.colour == colour:
                     moves = piece.generate_moves(self)
                     if moves:
                         return False
