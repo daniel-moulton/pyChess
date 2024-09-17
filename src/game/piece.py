@@ -21,14 +21,6 @@ class Piece:
         rank (int): The rank of the piece on the board.
         file (int): The file of the piece on the board.
         moves (list[tuple[int, int]]): A list of possible moves for the piece.
-
-    Methods:
-        generate_moves(board): Generate a list of possible moves for the piece.
-        get_position(): Get the position of the piece on the board.
-        set_position(file, rank): Set the position of the piece on the board.
-        filter_self_check_moves(board, moves): Filter out moves that would put the friendly king in check.
-        filter_in_check_moves(board, moves): Filter out moves that would leave the friendly king in check.
-        get_fen_char(): Get the FEN character representing the piece.
     """
 
     def __init__(self, colour: Colour, piece_type: PieceType = PieceType.NONE) -> None:
@@ -175,9 +167,6 @@ class Pawn(Piece):
     Class representing a pawn piece.
 
     Inherits attributes and methods from the Piece class.
-
-    Methods:
-        generate_moves(board): Generate a list of possible moves for the piece.
     """
 
     def __init__(self, colour: Colour) -> None:
@@ -227,9 +216,6 @@ class Knight(Piece):
     Class representing a knight piece.
 
     Inherits attributes and methods from the Piece class.
-
-    Methods:
-        generate_moves(board): Generate a list of possible moves for the piece.
     """
 
     def __init__(self, colour: Colour) -> None:
@@ -274,9 +260,6 @@ class Bishop(Piece):
     Class representing a bishop piece.
 
     Inherits attributes and methods from the Piece class.
-
-    Methods:
-        generate_moves(board): Generate a list of possible moves for the piece.
     """
 
     def __init__(self, colour: Colour) -> None:
@@ -320,9 +303,6 @@ class Rook(Piece):
     Class representing a rook piece.
 
     Inherits attributes and methods from the Piece class.
-
-    Methods:
-        generate_moves(board): Generate a list of possible moves for the piece.
     """
 
     def __init__(self, colour: Colour) -> None:
@@ -375,9 +355,6 @@ class Queen(Piece):
     Class representing a queen piece.
 
     Inherits attributes and methods from the Piece class.
-
-    Methods:
-        generate_moves(board): Generate a list of possible moves for the piece.
     """
 
     def __init__(self, colour: Colour) -> None:
@@ -418,10 +395,6 @@ class King(Piece):
     Class representing a king piece.
 
     Inherits attributes and methods from the Piece class.
-
-    Methods:
-        generate_moves(board): Generate a list of possible moves for the piece.
-        in_check(board): Check if the king is in check.
     """
 
     def __init__(self, colour: Colour) -> None:
