@@ -4,6 +4,21 @@ from src.game.piece_type import PieceType
 
 
 class Board:
+    """
+    Class representing the chess board.
+
+    Attributes:
+        board (list[list[Piece]]): A 2D list representing the board.
+        fen (str): The position of the board in Forsyth-Edwards Notation (FEN).
+        active_colour (Colour): The colour of the player whose turn it is.
+        castling_rights (str): A string representing the castling rights of both players.
+        en_passant_square (str): The square where an en passant capture could be made.
+        halfmove_clock (int): The number of halfmoves since the last capture or pawn move.
+        fullmove_number (int): The number of fullmoves in the game.
+        white_king (King): The white king piece.
+        black_king (King): The black king piece.
+        game_active (bool): A flag indicating whether the game is being played.
+    """
     def __init__(self, fen: str = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') -> None:
         """
         Initializes the board object.
