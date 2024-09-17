@@ -113,7 +113,7 @@ class Piece:
         self.file = file
         self.rank = rank
 
-    def filter_self_check_moves(self, board: Board, moves: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    def filter_self_check_moves(self, board: 'Board', moves: list[tuple[int, int]]) -> list[tuple[int, int]]:
         """
         Filter out moves that would put the friendly king in check.
 
@@ -135,7 +135,7 @@ class Piece:
             board.undo_move(self, original_position, captured_piece)
         return filtered_moves
 
-    def filter_in_check_moves(self, board: Board, moves: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    def filter_in_check_moves(self, board: 'Board', moves: list[tuple[int, int]]) -> list[tuple[int, int]]:
         """
         Filter out moves that would leave the friendly king in check.
 
@@ -192,7 +192,7 @@ class Pawn(Piece):
         """
         super().__init__(colour, PieceType.PAWN)
 
-    def generate_moves(self, board: Board) -> list[tuple[int, int]]:
+    def generate_moves(self, board: 'Board') -> list[tuple[int, int]]:
         """
         Generates a list of possible moves for the pawn.
 
@@ -244,7 +244,7 @@ class Knight(Piece):
         """
         super().__init__(colour, PieceType.KNIGHT)
 
-    def generate_moves(self, board: Board) -> list[tuple[int, int]]:
+    def generate_moves(self, board: 'Board') -> list[tuple[int, int]]:
         """
         Generates a list of possible moves for the knight.
 
@@ -282,7 +282,7 @@ class Bishop(Piece):
     def __init__(self, colour: Colour) -> None:
         super().__init__(colour, PieceType.BISHOP)
 
-    def generate_moves(self, board: Board) -> list[tuple[int, int]]:
+    def generate_moves(self, board: 'Board') -> list[tuple[int, int]]:
         """
         Generates a list of possible moves for the bishop.
 
@@ -337,7 +337,7 @@ class Rook(Piece):
         """
         super().__init__(colour, PieceType.ROOK)
 
-    def generate_moves(self, board: Board) -> list[tuple[int, int]]:
+    def generate_moves(self, board: 'Board') -> list[tuple[int, int]]:
         """
         Generates a list of possible moves for the rook.
 
@@ -392,7 +392,7 @@ class Queen(Piece):
         """
         super().__init__(colour, PieceType.QUEEN)
 
-    def generate_moves(self, board: Board) -> list[tuple[int, int]]:
+    def generate_moves(self, board: 'Board') -> list[tuple[int, int]]:
         """
         Generates a list of possible moves for the queen.
 
@@ -436,7 +436,7 @@ class King(Piece):
         """
         super().__init__(colour, PieceType.KING)
 
-    def generate_moves(self, board: Board) -> list[tuple[int, int]]:
+    def generate_moves(self, board: 'Board') -> list[tuple[int, int]]:
         """
         Generates a list of possible moves for the king.
 
@@ -464,7 +464,7 @@ class King(Piece):
         self.moves = moves
         return moves
 
-    def in_check(self, board: Board) -> bool:
+    def in_check(self, board: 'Board') -> bool:
         """
         Check if the king is in check.
 
