@@ -455,7 +455,10 @@ class King(Piece):
             while 0 <= x < 8 and 0 <= y < 8:
                 target = board.get_piece(x, y)
                 if target is not None:
-                    if target.colour != self.colour and (target.piece_type == PieceType.BISHOP or target.piece_type == PieceType.QUEEN):
+                    if target.colour != self.colour and (
+                        target.piece_type == PieceType.BISHOP or
+                        target.piece_type == PieceType.QUEEN
+                    ):
                         return True
                     break
                 x += dx
@@ -467,7 +470,10 @@ class King(Piece):
             while 0 <= x < 8 and 0 <= y < 8:
                 target = board.get_piece(x, y)
                 if target is not None:
-                    if target.colour != self.colour and (target.piece_type == PieceType.ROOK or target.piece_type == PieceType.QUEEN):
+                    if target.colour != self.colour and (
+                        target.piece_type == PieceType.ROOK or
+                        target.piece_type == PieceType.QUEEN
+                    ):
                         return True
                     break
                 x += dx

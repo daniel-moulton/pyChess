@@ -197,7 +197,7 @@ class BoardView:
         Args:
             file (int): The file (column) index of the clicked square.
             rank (int): The rank (row) index of the clicked square.
-            
+
         Returns:
             None
         """
@@ -243,12 +243,13 @@ class BoardView:
             None
         """
         self.destination_square = (file, rank)
-        self.update_board_view(file, rank)
+        original_file, original_rank = self.selected_piece.file, self.selected_piece.rank
+
         self.board.move_piece(self.selected_piece, self.destination_square)
-        self.update_board_view(file, rank)
+        self.update_board_view(original_file, original_rank, file, rank)
         self.board.update_game_state()
 
-    def update_board_view(self, file: int, rank: int) -> None:
+    def update_board_view(self, original_file: int, original_rank: int, file: int, rank: int) -> None:
         """
         Updates the board view after a move is made.
 
@@ -258,6 +259,8 @@ class BoardView:
         Checks if the opposite king is in check, highlights the king if in check, and checks for checkmate.
 
         Args:
+            original_file (int): The file (column) index of the original square.
+            original_rank (int): The rank (row) index of the original square
             file (int): The file (column) index of the destination square.
             rank (int): The rank (row) index of the destination square.
 
@@ -265,10 +268,10 @@ class BoardView:
             None
         """
         # Unhighlight the original square
-        self.highlight_selected_square(self.selected_piece.file, self.selected_piece.rank, False)
+        self.highlight_selected_square(original_file, original_rank, highlight=False)
 
         # Empty the original square
-        self.redraw_square(None, self.selected_piece.file, self.selected_piece.rank)
+        self.redraw_square(None, original_file, original_rank)
 
         # Empty the possible move squares
         self.reset_possible_moves()
@@ -278,15 +281,19 @@ class BoardView:
         self.redraw_square(self.selected_piece, file, rank)
 
         opp_king = self.board.white_king if self.selected_piece.colour == Colour.BLACK else self.board.black_king
+        own_king = self.board.black_king if self.selected_piece.colour == Colour.BLACK else self.board.white_king
 
+        # Check if move has put the opposite king in check
         if self.is_king_in_check(opp_king):
-            # Check if move has put the opposite king in check
-            self.highlight_king_if_in_check()
+            self.highlight_king_if_in_check(opp_king)
 
             # Check for checkmate
             if self.is_king_in_checkmate():
                 print("Checkmate")
                 self.board.game_active = False
+
+        # Unhighlight own king if it is no longer in check
+        self.highlight_king_if_in_check(own_king)
 
     def reset_possible_moves(self) -> None:
         """
@@ -306,7 +313,7 @@ class BoardView:
 
         If check, highlight the square red to indicate check.
         If highlight, highlight the square with the highlight colour (indicating the selected piece).
-        Else, highlight the square with the original colour. 
+        Else, highlight the square with the original colour.
 
         Args:
             file (int): The file (column) index of the square.
@@ -369,7 +376,7 @@ class BoardView:
         else:
             circle_offset = 63
             ids = self.canvas.create_oval(
-                file1+circle_offset, rank1+circle_offset, file2-circle_offset, 
+                file1+circle_offset, rank1+circle_offset, file2-circle_offset,
                 rank2-circle_offset, fill=highlight_colour, outline='')
             self.canvas_ids.append(ids)
 
@@ -410,17 +417,18 @@ class BoardView:
         """
         return king.in_check(self.board)
 
-    def highlight_king_if_in_check(self) -> None:
+    def highlight_king_if_in_check(self, king: King) -> None:
         """
         Highlights the king if it is in check.
 
         Highlights the king's square with the check colour.
 
+        Args:
+            king (King): The king to highlight.
+
         Returns:
             None
         """
-        king = self.board.white_king if self.selected_piece.colour == Colour.BLACK else self.board.black_king
-
         # Remove any highlight on the king's square
         self.highlight_selected_square(king.file, king.rank, highlight=False)
 
