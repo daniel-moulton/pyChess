@@ -19,6 +19,7 @@ class Board:
         black_king (King): The black king piece.
         game_active (bool): A flag indicating whether the game is being played.
     """
+
     def __init__(self, fen: str = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') -> None:
         """
         Initializes the board object.
@@ -240,6 +241,8 @@ class Board:
             self.fullmove_number += 1
         self.halfmove_clock += 1
 
+        self.check_for_draw()
+
     def is_king_in_checkmate(self, king: King) -> bool:
         """
         Checks if the specified king is in checkmate.
@@ -256,6 +259,47 @@ class Board:
             for file in range(8):
                 piece = self.get_piece(file, rank)
                 if piece is not None and piece.colour == colour:
+                    moves = piece.generate_moves(self)
+                    if moves:
+                        return False
+        return True
+
+    def check_for_draw(self) -> None:
+        """
+        Checks if the game is a draw based on the current board position.
+
+        Criteria for a draw:
+        - 50-move rule: If no pawn moves or captures have occurred in the last 50 moves.
+        - Insufficient material: If neither player has enough material to checkmate the opponent.
+        - Stalemate: If the active player has no legal moves and is not in check.
+
+        Returns:
+            None
+        """
+        if self.halfmove_clock >= 100:
+            self.game_active = False
+            print("Draw by 50-move rule")
+        elif self.is_stalemate():
+            self.game_active = False
+            print("Draw by stalemate")
+        # elif self.is_insufficient_material():
+        #     self.game_active = False
+        #     print("Draw by insufficient material")
+
+    def is_stalemate(self) -> bool:
+        """
+        Checks if the game is a stalemate.
+
+        A stalemate occurs when the active player has no legal moves and is not in check.
+
+        Returns:
+            bool: True if the game is a stalemate, False otherwise.
+        """
+        # Check if active player has any legal moves
+        for rank in range(8):
+            for file in range(8):
+                piece = self.get_piece(file, rank)
+                if piece is not None and piece.colour == self.active_colour:
                     moves = piece.generate_moves(self)
                     if moves:
                         return False

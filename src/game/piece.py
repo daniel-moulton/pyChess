@@ -197,8 +197,13 @@ class Pawn(Piece):
         direction = 1 if self.colour == Colour.WHITE else -1
         if board.get_piece(file, rank + direction) is None:
             moves.append((file, rank + direction))
-            if (rank == 1 or rank == 6) and board.get_piece(file, rank + 2 * direction) is None:
+
+            # Check for double move
+            if ((rank == 1 and direction == 1) or (rank == 6 and direction == -1)) and (
+                board.get_piece(file, rank + 2 * direction) is None
+            ):
                 moves.append((file, rank + 2 * direction))
+
         for attack in [-1, 1]:
             target = board.get_piece(file + attack, rank + direction) if 0 <= file + attack < 8 else None
             if target is not None and target.colour != self.colour:
