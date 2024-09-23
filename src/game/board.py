@@ -224,7 +224,6 @@ class Board:
         # Place the new piece on the board
         self.set_piece(file, rank, new_piece)
         new_piece.set_position(file, rank)
-        print(new_piece.get_position())
 
         return new_piece
 
