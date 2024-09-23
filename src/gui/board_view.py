@@ -58,12 +58,12 @@ class BoardView:
         self.draw_pieces(board)
         self.canvas.bind("<Button-1>", self.on_click)
 
-    def load_piece_images(self) -> dict[str, ImageTk.PhotoImage]:
+    def load_piece_images(self) -> dict[int, ImageTk.PhotoImage]:
         """
         Loads and returns a dictionary of piece images.
 
         Returns:
-            dict: A dictionary mapping piece names to their corresponding image objects.
+            dict[int, ImageTk.PhotoImage]: A dictionary mapping piece names to their corresponding image objects.
         """
         images = {}
         pieces_path = 'src/gui/images'
@@ -163,7 +163,7 @@ class BoardView:
             event (tk.Event): The event object representing the click event.
 
         Returns:
-            tuple: A tuple containing the file and rank of the clicked square.
+            tuple[int, int]: A tuple containing the file and rank of the clicked square.
         """
         file = event.x // 100
         rank = 7 - (event.y // 100)
@@ -488,7 +488,7 @@ class BoardView:
             rank2 (int): The y-coordinate of the bottom-right corner of the square.
 
         Returns:
-            list: A list of ids of the triangles drawn on the canvas.
+            list[int]: A list of ids of the triangles drawn on the canvas.
         """
         ids = []
         trainagle_size = 16

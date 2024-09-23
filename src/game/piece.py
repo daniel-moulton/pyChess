@@ -51,7 +51,7 @@ class Piece:
         """
         return f'{self.colour.name} {self.piece_type.name}'
 
-    def encode(self):
+    def encode(self) -> int:
         """
         Encodes the piece as a 5 bit number.
 
