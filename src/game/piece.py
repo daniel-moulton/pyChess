@@ -105,6 +105,15 @@ class Piece:
         self.file = file
         self.rank = rank
 
+    def get_type(self) -> PieceType:
+        """
+        Get the type of the piece.
+
+        Returns:
+            PieceType: The type of the piece.
+        """
+        return self.piece_type
+
     def filter_self_check_moves(self, board: 'Board', moves: list[tuple[int, int]]) -> list[tuple[int, int]]:
         """
         Filter out moves that would put the friendly king in check.

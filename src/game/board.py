@@ -204,6 +204,30 @@ class Board:
 
         return captured_piece
 
+    def promote_pawn(self, pawn: Piece, new_piece: Piece, square: tuple[int, int]) -> Piece:
+        """
+        Promotes a pawn to a new piece type.
+
+        Args:
+            pawn (Piece): The pawn piece to promote.
+            new_piece (Piece): The new piece type to promote the pawn to.
+            square (tuple[int, int]): The square to place the new piece.
+
+        Returns:
+            Piece: The new piece that the pawn was promoted to.
+        """
+        file, rank = square
+
+        # Remove the pawn from the board
+        self.set_piece(pawn.file, pawn.rank, None)
+
+        # Place the new piece on the board
+        self.set_piece(file, rank, new_piece)
+        new_piece.set_position(file, rank)
+        print(new_piece.get_position())
+
+        return new_piece
+
     def undo_move(self, piece: Piece, original_position: tuple[int, int],
                   captured_piece: Piece) -> None:
         """
@@ -227,7 +251,7 @@ class Board:
         # Restore the captured piece
         self.set_piece(current_file, current_rank, captured_piece)
 
-    def update_game_state(self):
+    def update_game_state(self) -> None:
         """
         Updates the game state based on the current board position.
 
@@ -279,7 +303,7 @@ class Board:
         if self.halfmove_clock >= 100:
             self.game_active = False
             print("Draw by 50-move rule")
-        elif self.is_stalemate():
+        elif self.is_stalemate() and self.game_active:
             self.game_active = False
             print("Draw by stalemate")
         # elif self.is_insufficient_material():

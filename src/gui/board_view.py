@@ -1,9 +1,10 @@
 import os
 from PIL import Image, ImageTk
 import tkinter as tk
-from src.game.piece import King, Piece
+from src.game.piece import King, Piece, Knight, Bishop, Rook, Queen
 from src.game.colour import Colour
 from src.game.board import Board
+from src.game.piece_type import PieceType
 
 
 # Map the binary representation of the pieces to their image names
@@ -26,6 +27,7 @@ binary_to_image = {
 board_colours = ['#f1d9c0', '#a97a65']
 highlight_colour = '#5a7048'
 check_colour = '#ff0000'
+promotion_colour = '#8d7281'
 
 
 class BoardView:
@@ -39,6 +41,7 @@ class BoardView:
         piece_images (dict): A dictionary mapping piece names to their corresponding image objects.
         selected_piece (Piece): The piece that is currently selected.
         destination_square (tuple): The square to which the selected piece will be moved.
+        promotion_pending (bool): A flag to track if a promotion is pending.
     """
 
     def __init__(self, canvas: tk.Canvas, board: Board) -> None:
@@ -50,6 +53,7 @@ class BoardView:
         self.piece_images = self.load_piece_images()
         self.selected_piece = None  # First clicked piece/square
         self.destination_square = None  # Second clicked square
+        self.promotion_pending = False  # Track if promotion is pending
         self.draw_board()
         self.draw_pieces(board)
         self.canvas.bind("<Button-1>", self.on_click)
@@ -142,12 +146,12 @@ class BoardView:
 
         clicked_piece = self.board.get_piece(file, rank)
 
-        if self.selected_piece is None:
+        if self.promotion_pending:
+            self.handle_promotion_click(file, rank)
+        elif self.selected_piece is None:
             self.handle_first_click(clicked_piece, file, rank)
         else:
             self.handle_second_click(file, rank)
-            self.selected_piece = None
-            self.destination_square = None
 
     def get_clicked_square(self, event: tk.Event) -> tuple[int, int]:
         """
@@ -208,6 +212,60 @@ class BoardView:
 
         self.move_selected_piece(file, rank)
 
+        # Check if the pawn has reached the end of the board
+        if self.selected_piece.get_type() == PieceType.PAWN and (rank == 0 or rank == 7):
+            self.promotion_pending = True
+            self.draw_promotion_squares(self.destination_square)
+        else:
+            self.selected_piece = None
+            self.destination_square = None
+            self.board.update_game_state()
+
+    def handle_promotion_click(self, file: int, rank: int) -> None:
+        """
+        Handles the promotion click event on the canvas.
+
+        If a pawn is selected and a promotion square is clicked, promotes the pawn to the selected piece.
+        Then clears the promotion squares and redraws the board where necessary.
+
+        Args:
+            file (int): The file (column) index of the clicked square.
+            rank (int): The rank (row) index of the clicked square.
+
+        Returns:
+            None
+        """
+        # Get the promotion piece from the user click
+        # If the rank is 0 or 7, it's a queen, 1,6 is a rook, 2,5 is a bishop, 3,4 is a knight
+
+        if not self.promotion_pending or file != self.destination_square[0]:
+            return
+
+        # Validate the rank for promotion based on piece colour
+        if self.selected_piece.colour == Colour.WHITE and rank not in (4, 5, 6, 7):
+            return  # Invalid click for white
+        elif self.selected_piece.colour == Colour.BLACK and rank not in (0, 1, 2, 3):
+            return  # Invalid click for black
+
+        original_file, original_rank = self.selected_piece.file, self.selected_piece.rank
+
+        promotion_piece = None
+        if rank == 0 or rank == 7:
+            promotion_piece = Queen(self.selected_piece.colour)
+        elif rank == 1 or rank == 6:
+            promotion_piece = Rook(self.selected_piece.colour)
+        elif rank == 2 or rank == 5:
+            promotion_piece = Bishop(self.selected_piece.colour)
+        elif rank == 3 or rank == 4:
+            promotion_piece = Knight(self.selected_piece.colour)
+
+        self.selected_piece = self.board.promote_pawn(self.selected_piece, promotion_piece, self.destination_square)
+        self.draw_promotion_squares(self.destination_square, remove=True)
+        self.update_board_view(original_file, original_rank, self.destination_square[0], self.destination_square[1])
+        self.promotion_pending = False
+        self.selected_piece = None
+        self.board.update_game_state()
+
     def deselect_piece(self) -> None:
         """
         Deselects the currently selected piece.
@@ -246,8 +304,43 @@ class BoardView:
         original_file, original_rank = self.selected_piece.file, self.selected_piece.rank
 
         self.board.move_piece(self.selected_piece, self.destination_square)
+
         self.update_board_view(original_file, original_rank, file, rank)
-        self.board.update_game_state()
+
+    def draw_promotion_squares(self, square: tuple[int, int], remove: bool = False) -> None:
+        """
+        Draws the promotion squares on the canvas.
+
+        Draws the promotion squares for the pawn at the specified square.
+        Draws the pieces in the order: Queen, Rook, Bishop, Knight. (i.e. top to
+        bottom for white, bottom to top for black)
+
+        Args:
+            square (tuple): The file and rank of the square to promote the pawn
+            remove (bool): Whether to remove the promotion squares instead of adding them.
+
+        Returns:
+            None
+        """
+        file, rank = square
+
+        start, end = (0, 4) if rank == 0 else (4, 8)  # Adjusted end values for both cases
+        piece_colour = Colour.WHITE if rank == 7 else Colour.BLACK
+
+        pieces = [Queen(piece_colour), Rook(piece_colour), Bishop(piece_colour), Knight(piece_colour)]
+
+        # Reverse the list for white (ensures piece order)
+        if rank == 7:
+            pieces = pieces[::-1]
+
+        for i in range(start, end):
+            piece = pieces[i-start]
+            if not remove:
+                self.highlight_selected_square(file, i, promotion=True)
+                self.draw_piece(piece, file, i)
+            else:
+                self.redraw_square(None, file, i)
+                self.redraw_square(self.board.get_piece(file, i), file, i)
 
     def update_board_view(self, original_file: int, original_rank: int, file: int, rank: int) -> None:
         """
@@ -307,7 +400,8 @@ class BoardView:
         for ids in self.canvas_ids:
             self.canvas.delete(ids)
 
-    def highlight_selected_square(self, file: int, rank: int, highlight: bool = True, check: bool = False) -> None:
+    def highlight_selected_square(self, file: int, rank: int, highlight: bool = True,
+                                  check: bool = False, promotion: bool = False) -> None:
         """
         Highlights the selected square on the canvas.
 
@@ -320,6 +414,7 @@ class BoardView:
             rank (int): The rank (row) index of the square.
             highlight (bool): Whether to highlight the square.
             check (bool): Whether to highlight the square as a check square.
+            promotion (bool): Whether to highlight the square as a promotion square.
 
         Returns:
             None
@@ -330,6 +425,8 @@ class BoardView:
         file2, rank2 = file1+size, rank1+size
         if check:
             colour = check_colour
+        elif promotion:
+            colour = promotion_colour
         else:
             colour = highlight_colour if highlight else board_colours[(file+rank) % 2]
         self.canvas.create_rectangle(file1, rank1, file2, rank2, fill=colour, outline='')
