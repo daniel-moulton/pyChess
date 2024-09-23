@@ -21,7 +21,7 @@ This project is a simple chess game implemented in Python using Tkinter.
 - [ ] Single-player mode against a computer AI
 - [ ] Castling
 - [ ] En passant
-- [ ] Pawn promotion
+- [x] Pawn promotion
 - [ ] Draw detection
 
 ## Installation
