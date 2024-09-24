@@ -507,6 +507,17 @@ class King(Piece):
             if target is not None and target.colour != self.colour and target.piece_type == PieceType.PAWN:
                 return True
 
+        # Check for king
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if dx == 0 and dy == 0:
+                    continue
+                x, y = file + dx, rank + dy
+                if 0 <= x < 8 and 0 <= y < 8:
+                    target = board.get_piece(x, y)
+                    if target is not None and target.colour != self.colour and target.piece_type == PieceType.KING:
+                        return True
+
         return False
 
 

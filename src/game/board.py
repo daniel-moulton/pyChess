@@ -42,7 +42,7 @@ class Board:
         self.black_king = None
         self.game_active = True
 
-        self.parse_fen(fen)
+        self.parse_fen(self.fen)
 
     def __str__(self) -> str:
         """
